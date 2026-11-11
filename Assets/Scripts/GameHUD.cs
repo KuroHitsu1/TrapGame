@@ -31,7 +31,7 @@ public class GameHUD : MonoBehaviour
         int sec = (int)(elapsed % 60f);
 
         timerText.text = $"{min:00}:{sec:00}";
-        deathText.text = "Mati: " + RespawnManager.Instance.deathCount;
+        deathText.text = "Death: " + RespawnManager.Instance.deathCount;
     }
 
     // Dipanggil oleh FinishLine
@@ -41,7 +41,7 @@ public class GameHUD : MonoBehaviour
         finished = true;
 
         clearPanel.SetActive(true);
-        clearText.text = $"CLEAR!\nWaktu {timerText.text}\nMati {RespawnManager.Instance.deathCount}x";
+        clearText.text = $"CLEAR!\nTime {timerText.text}\nDeath {RespawnManager.Instance.deathCount}x";
 
         // Munculkan kursor supaya tombol Restart bisa diklik
         Cursor.lockState = CursorLockMode.None;

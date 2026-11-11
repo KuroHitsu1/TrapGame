@@ -1,11 +1,8 @@
 using UnityEngine;
 
 // Platform yang bolak-balik. Pemain yang berdiri di atasnya ikut terbawa.
-// Persiapan objek:
-//  1. Cube dengan Box Collider biasa (lantai)
-//  2. Tambah Box Collider kedua, centang Is Trigger, atur Center Y naik dan Size Y lebih tinggi
-//     supaya menutupi area sedikit di atas permukaan platform
-//  3. Tambah Rigidbody, centang Is Kinematic, matikan Use Gravity
+// Persiapan objek: Cube dengan Box Collider biasa (bukan trigger).
+// Collider kedua (trigger) dan Rigidbody tidak lagi dibutuhkan, boleh dibiarkan atau dihapus.
 public class MovingPlatform : MonoBehaviour
 {
     [Tooltip("Jarak gerak dari posisi awal (x, y, z)")]
@@ -14,16 +11,31 @@ public class MovingPlatform : MonoBehaviour
     [Tooltip("Kecepatan. Makin besar makin cepat")]
     public float speed = 0.5f;
 
+    [Tooltip("Tinggi area di atas platform yang dihitung sebagai 'berdiri di atas' (meter)")]
+    public float detectHeight = 0.6f;
+
     Vector3 startPos;
-    CharacterController rider;
+    Collider solidCollider;
 
     void Start()
     {
         startPos = transform.position;
+
+        // Cari collider lantai (yang bukan trigger)
+        foreach (Collider c in GetComponents<Collider>())
+        {
+            if (!c.isTrigger)
+            {
+                solidCollider = c;
+                break;
+            }
+        }
     }
 
     void Update()
     {
+        CharacterController rider = FindRider();
+
         float t = Mathf.PingPong(Time.time * speed, 1f);
         Vector3 newPos = startPos + moveOffset * t;
         Vector3 delta = newPos - transform.position;
@@ -37,19 +49,25 @@ public class MovingPlatform : MonoBehaviour
         }
     }
 
-    void OnTriggerEnter(Collider other)
+    // Cek langsung apakah ada pemain di atas platform (tidak bergantung pada trigger)
+    CharacterController FindRider()
     {
-        if (other.CompareTag("Player"))
-        {
-            rider = other.GetComponent<CharacterController>();
-        }
-    }
+        if (solidCollider == null) return null;
 
-    void OnTriggerExit(Collider other)
-    {
-        if (other.CompareTag("Player"))
+        Bounds b = solidCollider.bounds;
+        float halfH = detectHeight * 0.5f;
+        Vector3 center = new Vector3(b.center.x, b.max.y + halfH - 0.1f, b.center.z);
+        Vector3 halfExtents = new Vector3(b.extents.x, halfH, b.extents.z);
+
+        Collider[] hits = Physics.OverlapBox(center, halfExtents, Quaternion.identity);
+        foreach (Collider h in hits)
         {
-            rider = null;
+            if (h.CompareTag("Player"))
+            {
+                CharacterController cc = h.GetComponent<CharacterController>();
+                if (cc != null) return cc;
+            }
         }
+        return null;
     }
 }
